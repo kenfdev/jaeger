@@ -1,49 +1,60 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: hotrod
+spec:
+  template:
+    metadata:
+      labels:
+        app: hotrod
+        version: v1
+    spec:
+      containers:
+      - image: kenfdev/hotrod
+        name: hotrod
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+        - containerPort: 8082
+        - containerPort: 8083
+      - image: jaegertracing/jaeger-agent
+        name: jaeger-agent
+        ports:
+        - containerPort: 5775
+          protocol: UDP
+        - containerPort: 5778
+        - containerPort: 6831
+          protocol: UDP
+        - containerPort: 6832
+          protocol: UDP
+        command:
+        - "/go/bin/agent-linux"
+        - "--collector.host-port=jaeger-collector.istio-system.svc:14267"
+---        
 apiVersion: v1
-kind: List
-items:
-- apiVersion: extensions/v1beta1
-  kind: Deployment
-  metadata:
-    name: hotrod
-  spec:
-    template:
-      metadata:
-        labels:
-          app: hotrod
-      spec:
-        containers:
-        - image: kenfdev/hotrod
-          name: hotrod
-          ports:
-          - containerPort: 8080
-          - containerPort: 8081
-          - containerPort: 8082
-          - containerPort: 8083
-        - image: jaegertracing/jaeger-agent
-          name: jaeger-agent
-          ports:
-          - containerPort: 5775
-            protocol: UDP
-          - containerPort: 5778
-          - containerPort: 6831
-            protocol: UDP
-          - containerPort: 6832
-            protocol: UDP
-          command:
-          - "/go/bin/agent-linux"
-          - "--collector.host-port=jaeger-collector.default.svc:14267"
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: hotrod
-    labels:
-      app: hotrod
-  spec:
-    ports:
-    - name: hotrod
-      port: 8080
-      protocol: TCP
-      targetPort: 8080
-    selector:
-      app: hotrod
-    type: NodePort
+kind: Service
+metadata:
+  name: hotrod
+  labels:
+    app: hotrod
+spec:
+  ports:
+  - name: http
+    port: 8080
+  selector:
+    app: hotrod
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gateway
+  annotations:
+    kubernetes.io/ingress.class: "istio"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /.*
+        backend:
+          serviceName: hotrod
+          servicePort: 8080
