@@ -60,7 +60,7 @@ func (s *Server) createServeMux() http.Handler {
 
 func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 	s.logger.For(r.Context()).Info("HTTP", zap.String("method", r.Method), zap.Stringer("url", r.URL))
-	http.ServeFile(w, r, "services/frontend/web_assets/index.html")
+	http.ServeFile(w, r, "/root/web_assets/index.html")
 }
 
 func (s *Server) dispatch(w http.ResponseWriter, r *http.Request) {
